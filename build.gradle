@@ -1,0 +1,18 @@
+plugins {
+    id 'groovy'
+}
+
+dependencies {
+    compile 'org.codehaus.groovy:groovy-all:2.4.15'
+
+    //compile group: 'javax.mail', name: 'javax.mail-api', version: '1.6.2'
+    compile "com.sun.mail:javax.mail:1.6.2"
+
+    // Use the awesome Spock testing and specification framework
+    testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
+}
+
+repositories {
+    //jcenter()
+    mavenCentral()
+}
