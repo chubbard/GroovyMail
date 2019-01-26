@@ -1,2 +1,2 @@
-# gremail
-Simplify sending email from Groovy.  Sending email in Groovy uses Javamail which is a verbose API.  Gremail is a domain specific language (DSL) written on top of JavaMail that combines Groovy Templates making it significantly easier to send email.
+# GroovyMail
+GroovyMail aims to replace using JavaMail as the API to send email in Groovy by building a domain specific language (DSL) on top of JavaMail to make sending email simpler.  GroovyMail combines Groovy Templates and MarkupEngine to make sending rich email much easiser that using JavaMail alone.
