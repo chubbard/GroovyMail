@@ -80,7 +80,7 @@ the recipient(s).
 ## The Template
 
 In the above example we didn't show what the template looks like.  GroovyMail is bsed around groovy's
-awesome MarkupTemplateEngine which gives a lot of flexibility for creating content.  Here is an example:
+awesome [MarkupTemplateEngine](http://groovy-lang.org/templating.html) which gives a lot of flexibility for creating content.  Here is an example:
 
     yieldUnescaped '<!DOCTYPE html>'
     html(lang:'en') {
@@ -106,4 +106,7 @@ awesome MarkupTemplateEngine which gives a lot of flexibility for creating conte
         }
     }
  
-## Classpath
+### Locating templates
+
+By default most templates are loaded off the classpath.  But you can also load them from directories
+and external locations to your application.
