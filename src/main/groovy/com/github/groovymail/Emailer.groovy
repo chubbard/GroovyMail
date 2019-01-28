@@ -1,14 +1,10 @@
 package com.github.groovymail
 
-import java.io.File
-import java.io.IOException
-import java.util.ArrayList
-import java.util.Arrays
-import java.util.HashMap
-import java.util.Iterator
-import java.util.List
-import java.util.Map
-import java.util.Properties
+import com.github.groovymail.protocols.ClasspathHandler
+import com.github.groovymail.protocols.ConfigurableStreamHandlerFactory
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import javax.activation.DataHandler
@@ -24,57 +20,75 @@ import javax.mail.internet.MimeBodyPart
 import javax.mail.internet.MimeMessage
 import javax.mail.internet.MimeMultipart
 import javax.mail.internet.MimeMessage.RecipientType
-import org.apache.log4j.Logger
 
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TemplateConfiguration
 
 public class Emailer {
 
-    private static final Logger logger = Logger.getLogger(Emailer.class)
+    static {
+        URL.setURLStreamHandlerFactory( new ConfigurableStreamHandlerFactory("classpath", new ClasspathHandler() ))
+    }
 
-		MarkupTemplateEngine engine
+    private static final Logger logger = LoggerFactory.getLogger(Emailer.class)
 
-    private String from
+    MarkupTemplateEngine engine
+
+    private Properties mailProperties
     private String username
     private String password
-    private Properties mailProperties
     private ExecutorService backgroundService = Executors.newCachedThreadPool()
 
-    protected Emailer() {
+    public Emailer(String propertyFilename = "emailer.properties") {
+        if( propertyFilename ) {
+            this.mailProperties = loadProperties(propertyFilename)
+        }
     }
 
-    public Emailer(Properties mailProperties, String from, String username, String password) throws IOException {
-    		this();
-        this.mailProperties = mailProperties
-        this.from = from
-        this.username = username
-        this.password = password
+    public Emailer(Map config) {
+        this("")
+        this.mailProperties = new Properties( config )
     }
 
-    public Emailer.Email email(String subject, String mailTemplate, String htmlTemplate) {
-        return new Emailer.Email(subject, mailTemplate, htmlTemplate)
+    public Email email(String to, String subject) {
+        return new Email(to, subject)
     }
 
-    public Emailer.Email email(String to, String subject, String mailTemplate, String htmlTemplate) {
-        return new Emailer.Email(to, subject, mailTemplate, htmlTemplate)
+    public Email email(String to, String subject, String htmlTemplate) {
+        return new Email(to, subject).html(htmlTemplate)
+    }
+
+    private Properties loadProperties(String name) {
+        return getClass().getResourceAsStream("/" + name)?.withStream { InputStream stream ->
+            Properties props = new Properties()
+            props.load( stream )
+            return props
+        }
+    }
+
+    private init() {
+        String protocol = this.mailProperties["mail.transport.protocol"] ?: "smtp"
+        this.username = this.mailProperties["mail.${protocol}.user"]
+        this.password = this.mailProperties["mail.${protocol}.password"]
+
+        if( !this.engine ) {
+            TemplateConfiguration config = new TemplateConfiguration();
+            config.setAutoIndent(true);
+            config.setAutoNewLine(true);
+            //config.setExpandEmptyElements(true);
+            //config.setLocale( locale );
+            config.setUseDoubleQuotes(true);
+
+            this.engine = new MarkupTemplateEngine(config)
+        }
     }
 
     public void stop() {
         this.backgroundService.shutdown()
     }
 
-    private init() {
-    	if( !this.engine ) {
-		    TemplateConfiguration config = new TemplateConfiguration();
-		    config.setAutoIndent(true);
-		    config.setAutoNewLine(true);
-		    config.setExpandEmptyElements(true);
-		    //config.setLocale( locale );
-		    config.setUseDoubleQuotes(true);
-
-		    this.engine = new MarkupTemplateEngine(config)    		
-    	}
+    public void setMailProperties() {
+        this.mailProperties = mailProperties
     }
 
     public class Email {
@@ -82,72 +96,103 @@ public class Emailer {
         private String[] bcc
         private String[] cc
         private String subject
-        private String textTemplate
-        private String htmlTemplate
-        private Map<String, Object> params
-        private List<File> attachments
+        private Map<String, Object> params = [:]
+        private List<File> attachments = []
+        Map<String,TemplateSource> mimeTypeToTemplate =[:]
 
         private Email() {
-            this.params = new HashMap()
-            this.attachments = new ArrayList()
         }
 
-        public Email(String subject, String textTemplate, String htmlTemplate) {
-            this()
-            this.subject = subject
-            this.textTemplate = textTemplate
-            this.htmlTemplate = htmlTemplate
-        }
-
-        public Email(String to, String subject, String textTemplate, String htmlTemplate) {
+        public Email(String to, String subject) {
             this()
             this.to = to
             this.subject = subject
-            this.textTemplate = textTemplate
-            this.htmlTemplate = htmlTemplate
         }
 
-        public Emailer.Email bind(String key, Object obj) {
+        public Email bind(Map params) {
+            this.params.putAll( params )
+            return this
+        }
+
+        public Email bind(String key, Object obj) {
             this.params[key] = obj
             return this
         }
 
-        public Emailer.Email to(String to) {
+        public Email to(String to) {
             this.to = to
             return this
         }
 
-        public Emailer.Email cc(String... cc) {
+        public Email cc(String... cc) {
             this.cc = cc
             return this
         }
 
-        public Emailer.Email bcc(String... bcc) {
+        public Email bcc(String... bcc) {
             this.bcc = bcc
             return this
         }
 
-        public Emailer.Email attach(File... files) {
+        public Email attach(File... files) {
             this.attachments.addAll(Arrays.asList(files))
+            return this
+        }
+
+        public Email html(String template) {
+            return mimeType("text/html", template)
+        }
+
+        public Email html(File template) {
+            return mimeType("text/html", template)
+        }
+
+        public Email html(Reader reader, String sourceName = null) {
+            return mimeType("text/html", reader, sourceName)
+        }
+
+        public Email text(String template) {
+            return mimeType("text/plain", template)
+        }
+
+        public Email text(File file) {
+            return mimeType("text/plain", file)
+        }
+
+        public Email text(Reader reader, String sourceName = null) {
+            return mimeType("text/plain", reader, sourceName)
+        }
+
+        public Email mimeType(String mimeType, String template) {
+            this.mimeTypeToTemplate[mimeType] = new UrlTemplate(template)
+            return this
+        }
+
+        public Email mimeType(String mimeType, File file) {
+            this.mimeTypeToTemplate[mimeType] = new FileTemplate(file)
+            return this
+        }
+
+        public Email mimeType(String mimeType, Reader reader, String sourceName = null) {
+            this.mimeTypeToTemplate[mimeType] = new ReaderTemplate(reader, sourceName)
             return this
         }
 
         private InternetAddress[] convertToAddress(String... recipients) throws AddressException {
             InternetAddress[] addresses = new InternetAddress[recipients.length]
-            int i = 0
             String[] arr = recipients
             int len = recipients.length
 
-            for(int i = 0; i < len; ++i) {
+            for(int i = 0; i < len; i++) {
                 String address = arr[i]
-                addresses[i++] = new InternetAddress(address)
+                addresses[i] = new InternetAddress(address)
             }
 
             return addresses
         }
 
         public void send(Session session, String from) {
-        		Emailer.this.init();        	
+            Emailer.this.init();
             try {
                 MimeMessage mimeMessage = new MimeMessage(session)
                 mimeMessage.setRecipient(RecipientType.TO, new InternetAddress(this.to))
@@ -161,79 +206,47 @@ public class Emailer {
 
                 mimeMessage.setFrom(new InternetAddress(from))
                 mimeMessage.setSubject(this.subject)
-            //     if (this.htmlTemplate == null) {
-            //         if (this.attachments.isEmpty()) {
-            //         		StringWriter out = new StringWriter();
-												// Emailer.this.engine.createTemplate(new URL(this.template)).make(this.params).writeTo(out)
-            //             mimeMessage.setText( out.toString() )
-            //         } else {
-            //             MimeMultipart partx = new MimeMultipart()
-            //         		StringWriter out = new StringWriter();
-												// Emailer.this.engine.createTemplate(new URL(this.template)).make(this.params).writeTo(out)
 
-            //             partx.addBodyPart(this.createBody(out.toString(), "text/plain"))
-            //             Iterator i$ = this.attachments.iterator()
+                MimeMultipart part = new MimeMultipart("alternative")
 
-            //             while(i$.hasNext()) {
-            //                 File f = (File)i$.next()
-            //                 partx.addBodyPart(this.createAttachment(f))
-            //             }
+                this.mimeTypeToTemplate.each { entry ->
+                    StringWriter out = new StringWriter();
+                    entry.value.locate(engine).make(this.params).writeTo(out)
+                    part.addBodyPart( this.createBody( out.toString(), entry.key ) )
+                }
 
-            //             mimeMessage.setContent(partx)
-            //         }
-            //     } else {
+                this.attachments.each { File f ->
+                    part.addBodyPart( this.createAttachment(f) )
+                }
 
-		        		StringWriter out = new StringWriter();
-								Emailer.this.engine.createTemplate(new URL(this.template)).make(this.params).writeTo(out)
-
-		            MimeMultipart part = new MimeMultipart("alternative")
-		            
-		            part.addBodyPart(this.createBody(text, "text/plain"))
-		            part.addBodyPart(this.createBody(html, "text/html"))
-
-		            Iterator i$x = this.attachments.iterator()
-
-		            while(i$x.hasNext()) {
-		                File fx = (File)i$x.next()
-		                part.addBodyPart(this.createAttachment(fx))
-		            }
-
-		            mimeMessage.setContent(part)
-          	// }
+                mimeMessage.setContent(part)
 
                 mimeMessage.saveChanges()
                 Transport transport = session.getTransport()
-                if (Emailer.logger.isDebugEnabled()) {
-                    Emailer.logger.debug("Connecting to mail server...")
-                }
+                logger.debug("Connecting to mail server...")
 
-                if (Emailer.this.username && Emailer.this.password ) {
-                    transport.connect(Emailer.this.username, Emailer.this.password)
-                } else {
-                    transport.connect()
-                }
+                transport.connect(username, password)
 
-                if (Emailer.logger.isDebugEnabled()) {
-                    Emailer.logger.debug("Connection made with mail server.")
-                }
+                logger.debug("Connection made with mail server.")
 
                 transport.sendMessage(mimeMessage, mimeMessage.getAllRecipients())
-                if (Emailer.logger.isDebugEnabled()) {
-                    Emailer.logger.debug("Message " + this.subject + " sent to " + this.to)
-                }
+                logger.debug("Message {} sent to {}", this.subject, this.to)
 
                 transport.close()
-                if (Emailer.logger.isDebugEnabled()) {
-                    Emailer.logger.debug("Transport closed.")
-                }
+                logger.debug("Transport closed.")
             } catch (Exception var9) {
-                Emailer.logger.error("There was an problem emailing: " + this.subject + " to: " + this.to, var9)
+                logger.error("There was an problem emailing: ${this.subject} to: ${this.to}", var9)
             }
-
         }
 
         public void send() {
-            this.send(Session.getInstance(Emailer.this.mailProperties), Emailer.this.from)
+            String protocol = Emailer.this.mailProperties["mail.transport.protocol"] ?: "smtp"
+            String from = Emailer.this.mailProperties["mail.${protocol}.from"] as String
+            send( from )
+        }
+
+        public void send(String from) {
+            this.send(Session.getInstance(Emailer.this.mailProperties), from)
         }
 
         public void sendAsync() {
@@ -244,8 +257,12 @@ public class Emailer {
             })
         }
 
-        public void send(String from) {
-            this.send(Session.getInstance(Emailer.this.mailProperties), from)
+        public void sendAsync(String from) {
+            Emailer.this.backgroundService.submit(new Runnable() {
+                public void run() {
+                    Email.this.send(from)
+                }
+            })
         }
 
         private BodyPart createBody(String text, String mimetype) throws MessagingException {
