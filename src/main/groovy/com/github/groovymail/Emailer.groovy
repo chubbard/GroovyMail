@@ -72,12 +72,13 @@ public class Emailer {
         this.password = this.mailProperties["mail.${protocol}.password"]
 
         if( !this.engine ) {
-            TemplateConfiguration config = new TemplateConfiguration();
-            config.setAutoIndent(true);
-            config.setAutoNewLine(true);
-            //config.setExpandEmptyElements(true);
-            //config.setLocale( locale );
-            config.setUseDoubleQuotes(true);
+            TemplateConfiguration config = new TemplateConfiguration()
+            config.setAutoIndent(true)
+            config.setAutoNewLine(true)
+            config.setAutoEscape(true)
+            //config.setExpandEmptyElements(true)
+            //config.setLocale( locale )
+            config.setUseDoubleQuotes(true)
 
             this.engine = new MarkupTemplateEngine(config)
         }
