@@ -24,7 +24,7 @@ For Maven:
 ## Setup
 
 In order for GroovyMail to work you need to setup the email configuration.  This is just
-the properies JavaMail needs.  The simplest way to configure the mailer is to add the a
+the properies [JavaMail](https://javaee.github.io/javamail/docs/api/com/sun/mail/smtp/package-summary.html) needs.  The simplest way to configure the mailer is to add the a
 properties file to your classpath named "emailer.properties".  Here is an example:
 
     mail.host=email.mydomain.com
@@ -44,6 +44,10 @@ Or with SMTPS
     mail.smtps.from=noreply@mydomain.com
     mail.smtps.user=someUser
     mail.smtps.password=somePassword
+
+You can change the filename used if you want to keep different versions for each environment.
+You just need to pass the name to the constructor you want to use, and it will look for that
+file on the classpath.
 
 ## How to send email
 
@@ -90,23 +94,25 @@ awesome [MarkupTemplateEngine](http://groovy-lang.org/templating.html) which giv
         }
         body {
             p("Hi ${name}"
-            p {
-            yield """
-                    We've noticed you are interested in stuff we are doing, and we love that you want to
-                    stay in the know with us.  Welcome aboard
-                """
-            }
-            p {
-                yield """
-                    Sincerely                    
-                """
-                br()
-                yield "Us"
-            }
+            p("""
+                We've noticed you are interested in stuff we are doing, and we love that you want to
+                stay in the know with us.  Welcome aboard
+            """)
+            p("Sincerely")
+            p("Us")
         }
     }
  
 ### Locating templates
 
 By default most templates are loaded off the classpath.  But you can also load them from directories
-and external locations to your application.
+and external locations to your application.  You can load them from any of these:
+ 
+* [File](https://docs.oracle.com/javase/8/docs/api/java/io/File.html)
+* [URL](https://docs.oracle.com/javase/8/docs/api/java/net/URL.html)
+* [Reader](https://docs.oracle.com/javase/8/docs/api/java/io/Reader.html)
+
+The URL is simply a string representing a URL (http:, file:, classpath:, etc).
+
+### Templates, Layouts, Default Look and Feel
+
