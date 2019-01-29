@@ -59,7 +59,7 @@ email through that server.  For example:
     ...
     
     emailer.email("person@someDomain.com", Some subject")
-        .html("classpath:my_email_template.groovy")
+        .html("classpath:onboard_email.groovy")
         .bind("name", "Dan")
         .send() 
         
@@ -73,18 +73,22 @@ container starts up, or at the beginning of your program, etc.  The `Emailer` in
 and the final line is showing how when the emailer instance is being shutdown you need to call stop() 
 method to clean it up.
 
-The middle part is how email is actually addressed and sent.  To initiate an email you call the `email` 
-method to start an email.  You must specify the email address in the to line, and the subject.  After that
-you can use the optional methods to further customize your email.  In this example `html` method is used 
-to set body content type to html and specify the template to use to generate that body content.  The next 
-method `bind` to used to pass data to the template.  You can invoke that method as many times as you want
-to include other data.  Finally `send` method is used to evaluate the template and send the email to
-the recipient(s).
+The middle part is how email is actually addressed and sent.  Here is the breakdown:
 
-## The Template
+* **`email`** initiates an email you want to build.  It requires an email address for the to line, and
+the subject of the Email.
+* **`html`** This method sets the content body of the message to be text/html and specifices the template
+to use to generate that content.  In this case we are loading the template off the classpath.
+* **`bind`** This method is used to pass data to the template during evaulation.  You may call this method
+as many times as you like to add additional data.  It takes a name and the underlying Object.  Templates
+may refer to this object using the name given.
+* **`send`** This method evaluates all templates, constructs the email, and sends it.  
 
-In the above example we didn't show what the template looks like.  GroovyMail is bsed around groovy's
-awesome [MarkupTemplateEngine](http://groovy-lang.org/templating.html) which gives a lot of flexibility for creating content.  Here is an example:
+### Template Example
+
+In the above example we didn't show what the template looks like.  GroovyMail is based around groovy's
+awesome [MarkupTemplateEngine](http://groovy-lang.org/templating.html) which gives a lot of flexibility 
+for creating content.  Here is an example:
 
     yieldUnescaped '<!DOCTYPE html>'
     html(lang:'en') {
@@ -95,14 +99,60 @@ awesome [MarkupTemplateEngine](http://groovy-lang.org/templating.html) which giv
         body {
             p("Hi ${name}"
             p("""
-                We've noticed you are interested in stuff we are doing, and we love that you want to
-                stay in the know with us.  Welcome aboard
+                We've noticed you are interested in stuff we are doing, and we 
+                love that you want to stay in the know with us.  Welcome aboard!
             """)
             p("Sincerely")
             p("Us")
         }
     }
- 
+
+## Other Examples
+
+Here are a few other examples of the API for common operations:
+
+### Asynchronous Emails
+
+You can offload the sending of the email to a background thread using `sendAsync`:
+
+    emailer.emal("person@someDomain", "Welcome" )
+        .html("classpath:welcome.groovy")
+        .bind("name", person.name )
+        .sendAsync()
+
+### Attach files:
+
+    emailer.email("person@someDomain.com", "Report")
+        .html("classpath:report.groovy")
+        .attach( pdfFile )
+        .bind( "data", data )
+        .send()
+        
+### bcc, cc, from:
+
+    emailer.email("person@someDomain.com", "Support Email")
+        .bcc("support@myDomain.com", "manager@myDomain.com")
+        .cc("otherPerson@someDomain.com")        
+        .html("classpath:support.groovy")
+        .bind("ticketId", ticket.id )
+        .send("noreply@myDomain.com")
+        
+### Multiple content:
+
+You can add multiple formats to your emails like sending plain text and HTML using the following:
+
+    emailer.email("person@someDomain.com", "Welcome Aboard")
+        .html("classpath:onboard_email_html.groovy")
+        .text("classpath:onboard_email_text.groovy")
+        .bind("user", user)
+        .send()
+
+## Templates
+
+GroovyMail renders content using [MarkupTemplateEngine](http://groovy-lang.org/templating.html) 
+for an explanation of how content is generated and the features you can use it's suggested you 
+visit those pages.
+                
 ### Locating templates
 
 By default most templates are loaded off the classpath.  But you can also load them from directories
@@ -174,3 +224,44 @@ This is just a bare HTML5 layout.  Here is an example of how to use it:
         } 
 
 #### Simplified
+
+Simplified is a series of templates and styles that helps you create modern style 
+emails.
+
+##### simplified-responsive-layout.groovy
+
+This gives you a single action responsive layout:
+
+    layout "simplified-responsive-layout.groovy",
+        title: 'Hello',
+        previewText: 'This is what will be displayed in some email clients as preview text.',
+        beforeActionContent: contents {
+            p("Hey there looks like you forgot something.  That's ok use the button below to reset your password.")
+        },
+        actionText: "Reset Password",
+        actionLink: "http://www.google.com",
+        afterActionContent: contents {
+            p("If you didn't initiate this please alert your administrator or contact us.")
+        },
+        footer: contents {
+            div {
+                span(class: "apple-link") {
+                    yield "Fruit Company Inc, 100 Infinite Loop, Cupertino CA 94102"
+                }
+                br()
+                span("Don't like these emails?")
+                a(href: "http://i.imgur.com/CScmqnj.gif") {
+                    yield "Unsubscribe"
+                }
+            }
+        }
+ 
+ The above shows all the parameters you can pass to the layout.  Here is a breakdown of what those do:
+ 
+ * **`title`**  The title of the email some clients display this
+ * **`previewText`** This is the preview text that might be displayed in the list of emails on some clients.
+ * **`beforeActionContent`** This is a template to insert before the action button
+ * **`actionText`** The text displayed to the user on the action button
+ * **`actionLink`** The URL the user will visit if they click on the action button
+ * **`afterActionContent`** A template to insert after the action button
+ * **`footer`** A template to insert at the bottom of the email after the main area.
