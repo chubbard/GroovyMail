@@ -45,6 +45,7 @@ table td {
     padding: 10px;
     width: 580px;
 }
+
 /* This should also be a block element, so that it will fill 100% of the .container */
 .content {
     box-sizing: border-box;
@@ -53,6 +54,7 @@ table td {
     max-width: 580px;
     padding: 10px;
 }
+
 /* -------------------------------------
   HEADER, FOOTER, MAIN
 ------------------------------------- */
@@ -169,27 +171,35 @@ a {
 .last {
     margin-bottom: 0;
 }
+
 .first {
     margin-top: 0;
 }
+
 .align-center {
     text-align: center;
 }
+
 .align-right {
     text-align: right;
 }
+
 .align-left {
     text-align: left;
 }
+
 .clear {
     clear: both;
 }
+
 .mt0 {
     margin-top: 0;
 }
+
 .mb0 {
     margin-bottom: 0;
 }
+
 .preheader {
     color: transparent;
     display: none;
@@ -202,9 +212,11 @@ a {
     visibility: hidden;
     width: 0;
 }
+
 .powered-by a {
     text-decoration: none;
 }
+
 hr {
     border: 0;
     border-bottom: 1px solid #f6f6f6;
