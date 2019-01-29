@@ -8,8 +8,8 @@ targetCompatibility = 1.8
 sourceCompatibility = 1.8
 
 group = 'com.github.chubbard'
-version = '0.1.0'
-//version = '0.1.0-SNAPSHOT'
+//version = '0.1.0'
+version = '0.1.0-SNAPSHOT'
 description = """
 GroovyMail aims to replace using JavaMail as the API to send email in Groovy by 
 building a domain specific language (DSL) on top of JavaMail to make 
