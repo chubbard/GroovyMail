@@ -116,3 +116,61 @@ The URL is simply a string representing a URL (http:, file:, classpath:, etc).
 
 ### Templates, Layouts, Default Look and Feel
 
+A very important part of Groovy's MarkupTemplateEngine is being able to define reusable 
+[layouts](http://groovy-lang.org/templating.html#_layouts).  GroovyMail ships with some
+default layouts to make it easier to create responsive, pleasant looking emails.
+
+#### html5.groovy
+
+This is just a bare HTML5 layout.  Here is an example of how to use it:
+
+    layout "classpath:html5.groovy", 
+        title: "My Email", 
+        css: "some_file.css", 
+        bodyContent: contents {
+            p("Looks like Snow torrow.")
+            table {
+                thead {
+                    tr {
+                        th("Day of Week")
+                        th("Low")
+                        th("High")
+                        th("Conditions")
+                    }
+                }
+                tbody {
+                    tr {
+                        td("Monday")
+                        td("28F")
+                        td("32F")
+                        td("Snow")
+                    }
+                    tr {
+                        td("Tuesday")
+                        td("22F")
+                        td("31F")
+                        td("Snow")
+                    }
+                    tr {
+                        td("Wednesday")
+                        td("25F")
+                        td("30F")
+                        td("Cloudy")
+                    }
+                    tr {
+                        td("Thursday")
+                        td("24F")
+                        td("33F")
+                        td("Sunny")
+                    }
+                    tr {
+                        td("Friday")
+                        td("23F")
+                        td("31F")
+                        td("Sunny")
+                    }
+                }
+            }
+        } 
+
+#### Simplified
