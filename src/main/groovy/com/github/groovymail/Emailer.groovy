@@ -26,11 +26,11 @@ import groovy.text.markup.TemplateConfiguration
 
 public class Emailer {
 
+    private static final Logger logger = LoggerFactory.getLogger(Emailer.class)
+
     static {
         URL.setURLStreamHandlerFactory( new ConfigurableStreamHandlerFactory("classpath", new ClasspathHandler() ))
     }
-
-    private static final Logger logger = LoggerFactory.getLogger(Emailer.class)
 
     MarkupTemplateEngine engine
 
@@ -38,6 +38,7 @@ public class Emailer {
     private String username
     private String password
     private ExecutorService backgroundService = Executors.newCachedThreadPool()
+    private ClassLoader templateLoader
 
     public Emailer(String propertyFilename = "emailer.properties") {
         if( propertyFilename ) {
@@ -56,6 +57,11 @@ public class Emailer {
 
     public Email email(String to, String subject, String htmlTemplate) {
         return new Email(to, subject).html(htmlTemplate)
+    }
+
+    public Emailer templateLoader( ClassLoader loader ) {
+        this.templateLoader = loader
+        return this
     }
 
     private Properties loadProperties(String name) {
@@ -80,8 +86,8 @@ public class Emailer {
             //config.setLocale( locale )
             config.setUseDoubleQuotes(true)
 
-            this.engine = new MarkupTemplateEngine(config)
-            logger.debug( "Using urls {} for templates", engine.getTemplateLoader().getURLs() )
+            this.engine = new MarkupTemplateEngine(templateLoader ?: getClass().getClassLoader(), config)
+            logger.debug( "Using following urls for templates: {}", engine.getTemplateLoader().getURLs() ?: "<No URLS>" )
         }
     }
 

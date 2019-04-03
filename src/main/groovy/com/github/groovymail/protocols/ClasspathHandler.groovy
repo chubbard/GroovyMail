@@ -20,7 +20,7 @@ class ClasspathHandler extends URLStreamHandler {
 
     @Override
     protected URLConnection openConnection(URL u) throws IOException {
-        logger.debug( "Loading {} using classloader {}", u.getPath(), classLoader )
+        logger.debug( "Loading resource {}", u.getPath() )
         final URL resourceUrl = classLoader.getResource(u.getPath());
         return resourceUrl.openConnection();
     }
