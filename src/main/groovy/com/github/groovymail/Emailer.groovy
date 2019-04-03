@@ -81,6 +81,7 @@ public class Emailer {
             config.setUseDoubleQuotes(true)
 
             this.engine = new MarkupTemplateEngine(config)
+            logger.debug( "Using urls {} for templates", engine.getTemplateLoader().getURLs() )
         }
     }
 
@@ -210,7 +211,7 @@ public class Emailer {
 
                 MimeMultipart part = new MimeMultipart("alternative")
 
-                this.mimeTypeToTemplate.each { entry ->
+                this.mimeTypeToTemplate.each { Map.Entry<String,TemplateSource> entry ->
                     StringWriter out = new StringWriter();
                     entry.value.locate(engine).make(this.params).writeTo(out)
                     part.addBodyPart( this.createBody( out.toString(), entry.key ) )
