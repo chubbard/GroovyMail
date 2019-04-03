@@ -35,7 +35,8 @@ repositories {
 
 publishing {
     publications {
-        groovyMail(MavenPublication) {
+        groovymail(MavenPublication) {
+            from components.java
 
             pom {
                 name = project.name
@@ -55,9 +56,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = "https://github.com/chubbard/GroovyMail.git"
-                    developerConnection = "scm:https://github.com/chubbard/GroovyMail.git"
-                    url = "https://github.com/chubbard/GroovyMail.git"
+                    connection = "https://github.com/chubbard/groovymail.git"
+                    developerConnection = "scm:https://github.com/chubbard/groovymail.git"
+                    url = "https://github.com/chubbard/groovymail.git"
                 }
             }
 
@@ -122,14 +123,14 @@ signing {
 }
 
 model {
-    tasks.generatePomFileForGroovyMailPublication {
+    tasks.generatePomFileForGroovymailPublication {
         destination = file("$buildDir/generated-pom.xml")
     }
 
-    tasks.publishGroovyMailPublicationToMavenLocal {
+    tasks.publishGroovymailPublicationToMavenLocal {
         dependsOn project.tasks.signArchives
     }
-    tasks.publishGroovyMailPublicationToMavenRepository {
+    tasks.publishGroovymailPublicationToMavenRepository {
         dependsOn project.tasks.signArchives
     }
 }
