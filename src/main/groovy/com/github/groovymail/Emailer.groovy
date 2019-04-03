@@ -73,21 +73,23 @@ public class Emailer {
     }
 
     private init() {
-        String protocol = this.mailProperties["mail.transport.protocol"] ?: "smtp"
-        this.username = this.mailProperties["mail.${protocol}.user"]
-        this.password = this.mailProperties["mail.${protocol}.password"]
+        if( engine == null ) {
+            String protocol = this.mailProperties["mail.transport.protocol"] ?: "smtp"
+            this.username = this.mailProperties["mail.${protocol}.user"]
+            this.password = this.mailProperties["mail.${protocol}.password"]
 
-        if( !this.engine ) {
-            TemplateConfiguration config = new TemplateConfiguration()
-            config.setAutoIndent(true)
-            config.setAutoNewLine(true)
-            config.setAutoEscape(true)
-            //config.setExpandEmptyElements(true)
-            //config.setLocale( locale )
-            config.setUseDoubleQuotes(true)
+            if( !this.engine ) {
+                TemplateConfiguration config = new TemplateConfiguration()
+                config.setAutoIndent(true)
+                config.setAutoNewLine(true)
+                config.setAutoEscape(true)
+                //config.setExpandEmptyElements(true)
+                //config.setLocale( locale )
+                config.setUseDoubleQuotes(true)
 
-            this.engine = new MarkupTemplateEngine(templateLoader ?: getClass().getClassLoader(), config)
-            logger.debug( "Using following urls for templates: {}", engine.getTemplateLoader().getURLs() ?: "<No URLS>" )
+                this.engine = new MarkupTemplateEngine(templateLoader ?: Emailer.class.getClassLoader(), config)
+                logger.debug( "Using following urls for templates: {}", engine.getTemplateLoader().getURLs() ?: "<No URLS>" )
+            }
         }
     }
 
