@@ -224,7 +224,7 @@ public class Emailer {
 
                 mimeMessage.saveChanges()
                 Transport transport = session.getTransport()
-                logger.debug("Connecting to mail server...")
+                logger.debug("Connecting to mail server {}...", transport.getURLName())
 
                 transport.connect(username, password)
 
