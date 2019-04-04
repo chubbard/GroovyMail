@@ -201,6 +201,22 @@ public class Emailer {
             return addresses
         }
 
+        protected Map<String,String> renderAll() {
+            Emailer.this.init();
+
+            Map output = [:]
+            this.mimeTypeToTemplate.each { Map.Entry<String, TemplateSource> entry ->
+                StringWriter out = new StringWriter();
+                entry.value.locate(engine).make(this.params).writeTo(out)
+                output[ entry.key ] = out.toString()
+            }
+            return output
+        }
+
+        protected String render(String mimeType = 'text/html') {
+            return this.renderAll()[ mimeType ]
+        }
+
         public void send(Session session, String from) {
             Emailer.this.init();
             try {

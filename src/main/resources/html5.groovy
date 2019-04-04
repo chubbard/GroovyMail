@@ -10,8 +10,10 @@ html(lang:'en') {
         meta( name: "viewport", content: "width=device-width" )
         meta( "http-equiv": "Content-Type", content: "text/html; charset=UTF-8")
         title( title )
-        style {
-            include unescaped: css
+        if(css) {
+            style {
+                includeUnescaped(css)
+            }
         }
     }
     body {

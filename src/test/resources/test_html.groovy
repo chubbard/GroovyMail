@@ -2,7 +2,7 @@ layout "simplified-responsive-layout.groovy",
     title: 'Hello',
     previewText: 'This is what will be displayed in some email clients.',
     beforeActionContent: contents {
-        p("Hey there looks like you forgot something.  That's ok use the button below to reset your password.")
+        p("Hey ${name} looks like you forgot something.  That's ok use the button below to reset your password.")
     },
     actionText: "Reset Password",
     actionLink: "http://www.google.com",
