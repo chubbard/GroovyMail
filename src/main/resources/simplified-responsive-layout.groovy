@@ -1,3 +1,12 @@
+modelTypes = {
+    String title
+    String previewText
+    String actionText
+    String actionLink
+    Closure beforeActionContent
+    Closure afterActionContent
+    Closure footer
+}
 yieldUnescaped '<!DOCTYPE html>'
 html(lang:'en') {
     head {

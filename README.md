@@ -174,7 +174,7 @@ default layouts to make it easier to create responsive, pleasant looking emails.
 
 This is just a bare HTML5 layout.  Here is an example of how to use it:
 
-    layout "classpath:html5.groovy", 
+    layout "html5.groovy", 
         title: "My Email", 
         css: "some_file.css", 
         bodyContent: contents {

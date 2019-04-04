@@ -1,3 +1,9 @@
+modelTypes = {
+    String title
+    String css
+    Closure bodyContents
+}
+
 yieldUnescaped '<!DOCTYPE html>'
 html(lang:'en') {
     head {
