@@ -217,52 +217,48 @@ public class Emailer {
             return this.renderAll()[ mimeType ]
         }
 
-        public void send(Session session, String from) {
+        public void send(Session session, String from) throws MessagingException, IOException {
             Emailer.this.init();
-            try {
-                MimeMessage mimeMessage = new MimeMessage(session)
-                mimeMessage.setRecipient(RecipientType.TO, new InternetAddress(this.to))
-                if (this.cc != null) {
-                    mimeMessage.setRecipients(RecipientType.CC, this.convertToAddress(this.cc))
-                }
-
-                if (this.bcc != null) {
-                    mimeMessage.setRecipients(RecipientType.BCC, this.convertToAddress(this.bcc))
-                }
-
-                mimeMessage.setFrom(new InternetAddress(from))
-                mimeMessage.setSubject(this.subject)
-
-                MimeMultipart part = new MimeMultipart("alternative")
-
-                this.mimeTypeToTemplate.each { Map.Entry<String,TemplateSource> entry ->
-                    StringWriter out = new StringWriter();
-                    entry.value.locate(engine).make(this.params).writeTo(out)
-                    part.addBodyPart( this.createBody( out.toString(), entry.key ) )
-                }
-
-                this.attachments.each { File f ->
-                    part.addBodyPart( this.createAttachment(f) )
-                }
-
-                mimeMessage.setContent(part)
-
-                mimeMessage.saveChanges()
-                Transport transport = session.getTransport()
-                logger.debug("Connecting to mail server {}...", transport.getURLName())
-
-                transport.connect(username, password)
-
-                logger.debug("Connection made with mail server.")
-
-                transport.sendMessage(mimeMessage, mimeMessage.getAllRecipients())
-                logger.debug("Message {} sent to {}", this.subject, this.to)
-
-                transport.close()
-                logger.debug("Transport closed.")
-            } catch (Exception var9) {
-                logger.error("There was an problem emailing: ${this.subject} to: ${this.to}", var9)
+            MimeMessage mimeMessage = new MimeMessage(session)
+            mimeMessage.setRecipient(RecipientType.TO, new InternetAddress(this.to))
+            if (this.cc != null) {
+                mimeMessage.setRecipients(RecipientType.CC, this.convertToAddress(this.cc))
             }
+
+            if (this.bcc != null) {
+                mimeMessage.setRecipients(RecipientType.BCC, this.convertToAddress(this.bcc))
+            }
+
+            mimeMessage.setFrom(new InternetAddress(from))
+            mimeMessage.setSubject(this.subject)
+
+            MimeMultipart part = new MimeMultipart("alternative")
+
+            this.mimeTypeToTemplate.each { Map.Entry<String,TemplateSource> entry ->
+                StringWriter out = new StringWriter();
+                entry.value.locate(engine).make(this.params).writeTo(out)
+                part.addBodyPart( createBody( out.toString(), entry.key ) )
+            }
+
+            this.attachments.each { File f ->
+                part.addBodyPart( this.createAttachment(f) )
+            }
+
+            mimeMessage.setContent(part)
+
+            mimeMessage.saveChanges()
+            Transport transport = session.getTransport()
+            logger.debug("Connecting to mail server {}...", transport.getURLName())
+
+            transport.connect(username, password)
+
+            logger.debug("Connection made with mail server.")
+
+            transport.sendMessage(mimeMessage, mimeMessage.getAllRecipients())
+            logger.debug("Message {} sent to {}", this.subject, this.to)
+
+            transport.close()
+            logger.debug("Transport closed.")
         }
 
         public void send() {
