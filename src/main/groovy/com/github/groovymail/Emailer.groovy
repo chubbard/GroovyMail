@@ -261,28 +261,38 @@ public class Emailer {
             logger.debug("Transport closed.")
         }
 
-        public void send() {
+        public void send() throws MessagingException, IOException {
             String protocol = Emailer.this.mailProperties["mail.transport.protocol"] ?: "smtp"
             String from = Emailer.this.mailProperties["mail.${protocol}.from"] as String
             send( from )
         }
 
-        public void send(String from) {
+        public void send(String from) throws MessagingException, IOException {
             this.send(Session.getInstance(Emailer.this.mailProperties), from)
         }
 
         public void sendAsync() {
+            // todo better to return a promise or observable
             Emailer.this.backgroundService.submit(new Runnable() {
                 public void run() {
-                    Email.this.send()
+                    try {
+                        Email.this.send()
+                    } catch( Exception ex ) {
+                        logger.error("There was an problem emailing: ${subject} to: ${to}", ex)
+                    }
                 }
             })
         }
 
         public void sendAsync(String from) {
+            // todo better to return a promise or observable
             Emailer.this.backgroundService.submit(new Runnable() {
                 public void run() {
-                    Email.this.send(from)
+                    try {
+                        Email.this.send(from)
+                    } catch( Exception ex ) {
+                        logger.error("There was an problem emailing: ${subject} to: ${to}", ex)
+                    }
                 }
             })
         }
